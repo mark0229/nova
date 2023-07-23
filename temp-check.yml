@@ -1,0 +1,14 @@
+---
+- name: server-temp-check
+  hosts: dejn-server-temp
+  gather_facts: no
+  become: yes
+  tasks:
+  - name: server ipmi temp
+    shell: |
+      ipmitool sdr type temp | egrep "01-Inlet Ambient"|"02-CPU 1"|"15-Front Ambient"
+      sleep 5
+    register: output1
+  - debug:
+      var: output1.stdout
+...
