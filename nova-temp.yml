@@ -15,24 +15,22 @@
     shell: |
       ipmitool sdr type temp | awk '($1=="15-Front") { print $10 " " $12 }'
       sleep 1
-    register: output1
+    register: output
     when: vendor.stdout == 'HPE'
-  - debug:
-      var: output1.stdout
 
   - name: Dell server ipmi temp
     shell: |
       ipmitool sdr type temp | awk '($1=="Inlet") { print $10 " " $12 }'
       sleep 1
-    register: output1
+    register: output
     when: vendor.stdout != 'HPE'
 
-  - debug:
-      var: output1.stdout
+  - set_fact:
+      output= "{{output.stdout}}"
 
   - name: copy the output to a local file
     lineinfile:
-      line: "{{inventory_hostname}},Temp={{output1.stdout|join('\n')}}"
+      line: "{{inventory_hostname}},Temp={{output|join('\n')}}"
       path: "/etc/ansible/result/nova/auth-temp.csv"
       create: yes
     delegate_to: localhost
