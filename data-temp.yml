@@ -1,0 +1,45 @@
+---
+- name: server-temp-check
+  hosts: dejn-data*
+  gather_facts: no
+  become: yesi
+  become_method: sudo
+  become_user: root
+
+  tasks:
+  - name: server system-manufacture check
+    shell: dmidecode -s system-manufacturer
+    register: vendor
+  - set_fact:
+      vendor: "{{ vendor.stdout }}"
+
+  - name: HP server ipmi temp
+    shell: |
+      ipmitool sdr type temp | awk '($1=="15-Front") { print $10 " " $12 }'
+      sleep 1
+    register: output1
+    when: vendor == 'HPE'
+
+  - name: Dell server ipmi temp
+    shell: |
+      ipmitool sdr type temp | awk '($1=="Inlet") { print $10 " " $12 }'
+      sleep 1
+    register: output2
+    when: vendor != 'HPE'
+
+  - set_fact:
+      output: "{{ output1.stdout }}"
+    when: vendor == 'HPE'
+
+  - set_fact:
+      output: "{{ output2.stdout }}"
+    when: vendor != 'HPE'
+
+  - name: copy the output to a local file
+    lineinfile:
+      line: "{{inventory_hostname}},Temp={{ output }}"
+      path: "/etc/ansible/result/nova/nova-temp.csv"
+      create: yes
+    delegate_to: localhost
+
+...
