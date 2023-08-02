@@ -1,0 +1,24 @@
+---
+- name: server-temp-check
+  hosts: dejncc01*
+  gather_facts: no
+  become: yesi
+  become_method: sudo
+  become_user: root
+
+  tasks:
+  - name: Nova Server iLO/idrac event gathering
+    shell: |
+      ipmitool sel list 
+      sleep 1
+    register: output
+  - debug:
+      var: output.stdout
+
+  - name: copy the output to a local file
+    lineinfile:
+      line: "{{inventory_hostname}},{{ output.stdout_lines[-1] }}"
+      path: "/etc/ansible/result/nova/nova-event.csv"
+      create: yes
+    delegate_to: localhost
+...
